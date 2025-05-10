@@ -52,8 +52,13 @@
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
 
   let timeMultiplier = 1;
   const shapes = [];
@@ -84,7 +89,6 @@
 
   function drawShape(ctx, shape) {
     ctx.globalAlpha = shape.opacity || 1;
-
     ctx.beginPath();
     ctx.fillStyle = shape.color;
 
@@ -141,7 +145,7 @@
     }
 
     ctx.fill();
-    ctx.globalAlpha = 1; // сброс прозрачности
+    ctx.globalAlpha = 1;
   }
 
   function drawShapes() {
@@ -213,7 +217,50 @@
     const newShape = createRandomShape(mouseX, mouseY);
     shapes.push(newShape);
 
-    // Воспроизведение звука
     const sound = document.getElementById('clickSound');
-    sound.currentTime = 0;
-    sound
+    try {
+      sound.currentTime = 0;
+      sound.play();
+    } catch (err) {
+      console.warn("Звук не воспроизведён (возможно, из-за ограничений браузера)");
+    }
+  });
+
+  // === Анимация ===
+
+  let lastTime = 0;
+
+  function update(time) {
+    const delta = (time - lastTime) / 16.6667;
+    lastTime = time;
+
+    const effectiveDelta = delta * timeMultiplier;
+
+    for (const shape of shapes) {
+      if (!shape.dragging) {
+        shape.x += shape.vx * effectiveDelta;
+        shape.y += shape.vy * effectiveDelta;
+
+        if (shape.x < shape.radius || shape.x > canvas.width - shape.radius) {
+          shape.vx *= -1;
+        }
+        if (shape.y < shape.radius || shape.y > canvas.height - shape.radius) {
+          shape.vy *= -1;
+        }
+      }
+
+      // Плавное появление
+      if (shape.opacity < shape.opacityTarget) {
+        shape.opacity += 0.05;
+        if (shape.opacity > shape.opacityTarget) shape.opacity = shape.opacityTarget;
+      }
+    }
+
+    drawShapes();
+    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+</script>
+</body>
+</html>
