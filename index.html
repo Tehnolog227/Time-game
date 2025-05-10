@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Игра с управлением временем</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #0a0f2c;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    canvas {
+      display: block;
+      background-color: #000033;
+      cursor: grab;
+    }
+
+    #controls {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <label>
+    Скорость времени:
+    <input type="range" id="timeSlider" min="-2" max="5" step="0.1" value="1" />
+    <span id="speedValue">x1.0</span>
+  </label>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  let timeMultiplier = 1;
+  const shapes = [];
+  const shapeCount = 20;
+
+  const colors = ['#ff6b6b', '#f7d794', '#6a89cc', '#60a3bc', '#95afc0'];
+
+  for (let i = 0; i < shapeCount; i++) {
+    shapes.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      radius: Math.random() * 20 + 10,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      type: Math.random() > 0.5 ? 'circle' : 'square',
+      dragging: false,
+      offsetX: 0,
+      offsetY: 0
+    });
+  }
+
+  const slider = document.getElementById('timeSlider');
+  const speedLabel = document.getElementById('speedValue');
+  slider.addEventListener('input', () => {
+    timeMultiplier = parseFloat(slider.value);
+    speedLabel.textContent = `x${timeMultiplier.toFixed(1)}`;
+  });
+
+  let isDragging = false;
+  canvas.addEventListener('mousedown', (e) => {
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+
+    for (const shape of shapes) {
+      const dx = mouseX - shape.x;
+      const dy = mouseY - shape.y;
+      if (dx * dx + dy * dy < shape.radius * shape.radius) {
+        shape.dragging = true;
+        shape.offsetX = dx;
+        shape.offsetY = dy;
+        isDragging = true;
+        break;
+      }
+    }
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      for (const shape of shapes) {
+        if (shape.dragging) {
+          shape.x = e.clientX - shape.offsetX;
+          shape.y = e.clientY - shape.offsetY;
+        }
+      }
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    for (const shape of shapes) {
+      shape.dragging = false;
+    }
+    isDragging = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    for (const shape of shapes) {
+      shape.dragging = false;
+    }
+    isDragging = false;
+  });
+
+  function drawShapes() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const shape of shapes) {
+      ctx.beginPath();
+      ctx.fillStyle = shape.color;
+      if (shape.type === 'circle') {
+        ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
+      } else {
+        ctx.rect(shape.x - shape.radius, shape.y - shape.radius, shape.radius * 2, shape.radius * 2);
+      }
+      ctx.fill();
+    }
+  }
+
+  let lastTime = 0;
+  function update(time) {
+    const delta = (time - lastTime) / 16.6667;
+    lastTime = time;
+
+    const effectiveDelta = delta * timeMultiplier;
+
+    for (const shape of shapes) {
+      if (!shape.dragging) {
+        shape.x += shape.vx * effectiveDelta;
+        shape.y += shape.vy * effectiveDelta;
+
+        if (shape.x < shape.radius || shape.x > canvas.width - shape.radius) {
+          shape.vx *= -1;
+        }
+        if (shape.y < shape.radius || shape.y > canvas.height - shape.radius) {
+          shape.vy *= -1;
+        }
+      }
+    }
+
+    drawShapes();
+    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+</script>
+
+</body>
+</html>
