@@ -115,6 +115,29 @@
     }
     isDragging = false;
   });
+  // === Обработчик клика для создания новых фигур ===
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  // Создаём новую фигуру
+  const newShape = {
+    x: mouseX,
+    y: mouseY,
+    vx: (Math.random() - 0.5) * 2,
+    vy: (Math.random() - 0.5) * 2,
+    radius: Math.random() * 20 + 10,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    type: Math.random() > 0.5 ? 'circle' : 'square',
+    dragging: false,
+    offsetX: 0,
+    offsetY: 0
+  };
+
+  // Добавляем её в список фигур
+  shapes.push(newShape);
+});
 
   canvas.addEventListener('mouseleave', () => {
     for (const shape of shapes) {
